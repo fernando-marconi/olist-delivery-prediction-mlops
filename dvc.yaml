@@ -1,0 +1,8 @@
+stages:
+  ingestion:
+    cmd: python src/ingestion.py
+    deps:
+    - data/raw
+    - src/ingestion.py
+    outs:
+    - data/processed/consolidated_orders.csv
