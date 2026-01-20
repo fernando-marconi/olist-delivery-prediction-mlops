@@ -1,0 +1,19 @@
+schema: '2.0'
+stages:
+  ingestion:
+    cmd: python src/ingestion.py
+    deps:
+    - path: data/raw
+      hash: md5
+      md5: 797a00bc31008df615058ca198c64ad1.dir
+      size: 126186995
+      nfiles: 9
+    - path: src/ingestion.py
+      hash: md5
+      md5: af782ec4b5e38397d2410d0d28e22a3f
+      size: 923
+    outs:
+    - path: data/processed/consolidated_orders.csv
+      hash: md5
+      md5: ba9012e3e545285349c6e7dd24417240
+      size: 31060834
