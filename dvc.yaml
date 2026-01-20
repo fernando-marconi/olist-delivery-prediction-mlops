@@ -6,3 +6,10 @@ stages:
     - src/ingestion.py
     outs:
     - data/processed/consolidated_orders.csv
+  preprocessing:
+    cmd: python src/preprocessing.py
+    deps:
+    - data/processed/consolidated_orders.csv
+    - src/preprocessing.py
+    outs:
+    - data/processed/final_dataset.csv

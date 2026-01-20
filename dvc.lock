@@ -17,3 +17,19 @@ stages:
       hash: md5
       md5: ba9012e3e545285349c6e7dd24417240
       size: 31060834
+  preprocessing:
+    cmd: python src/preprocessing.py
+    deps:
+    - path: data/processed/consolidated_orders.csv
+      hash: md5
+      md5: ba9012e3e545285349c6e7dd24417240
+      size: 31060834
+    - path: src/preprocessing.py
+      hash: md5
+      md5: 0b9ddfb580b8dfe07324c0e4067725c8
+      size: 1552
+    outs:
+    - path: data/processed/final_dataset.csv
+      hash: md5
+      md5: 6914f66d2c824d565d7f763abae096d8
+      size: 29960543
