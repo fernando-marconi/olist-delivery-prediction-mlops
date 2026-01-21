@@ -25,7 +25,7 @@ def run_train():
     os.makedirs(model_path, exist_ok=True)
 
     df = pd.read_csv(input_file)
-    features = ['price', 'freight_value', 'product_weight_g', 'product_volume_cm3']
+    features = ['price', 'freight_value', 'product_weight_g', 'product_volume_cm3', 'is_interstate']
     X = df[features].fillna(0)
     y = df['is_late']
 
