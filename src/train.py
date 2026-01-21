@@ -35,7 +35,7 @@ def run_train():
     with mlflow.start_run(run_name="RandomForest_Baseline"):
         print("Iniciando treinamento com MLflow...")
         
-        model = RandomForestClassifier(n_estimators=100, random_state=42)
+        model = RandomForestClassifier(n_estimators=100, class_weight='balanced', random_state=42)
         model.fit(X_train, y_train)
 
         y_pred = model.predict(X_test)
