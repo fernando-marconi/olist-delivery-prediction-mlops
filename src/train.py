@@ -1,5 +1,5 @@
 import pandas as pd
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import f1_score
 import joblib
@@ -9,49 +9,64 @@ import mlflow.sklearn
 import dagshub
 
 def run_train():
-    # 1. Configuração do DagsHub e MLflow
+    # Setup DagsHub/MLflow - Credenciais do seu projeto
     repo_owner = "fernando-marconi"
     repo_name = "olist-delivery-prediction-mlops"
     
     dagshub.init(repo_owner=repo_owner, repo_name=repo_name, mlflow=True)
     mlflow.set_tracking_uri(f"https://dagshub.com/{repo_owner}/{repo_name}.mlflow")
     
-    # Ativa o log automático de parâmetros e métricas do Scikit-Learn
+    # O autolog registrará todas as tentativas da busca automática
     mlflow.sklearn.autolog()
 
-    # Caminhos
+    # Caminhos e Dados
     input_file = "data/processed/final_dataset.csv"
     model_path = "models"
     os.makedirs(model_path, exist_ok=True)
 
     df = pd.read_csv(input_file)
     features = [
-    'price', 'freight_value', 'product_weight_g', 
-    'product_volume_cm3', 'is_interstate', 
-    'estimated_days_to_deliver', 'purchase_day_of_week'
-]
+        'price', 'freight_value', 'product_weight_g', 
+        'product_volume_cm3', 'is_interstate', 
+        'estimated_days_to_deliver', 'purchase_day_of_week'
+    ]
     X = df[features].fillna(0)
     y = df['is_late']
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    # Iniciando o experimento no MLflow
-    with mlflow.start_run(run_name="RandomForest_Baseline"):
-        print("Iniciando treinamento com MLflow...")
-        
-        model = RandomForestClassifier(n_estimators=100, class_weight='balanced', random_state=42)
-        model.fit(X_train, y_train)
+    # 1. Definindo o "Grade" de parâmetros para testar
+    param_grid = {
+        'n_estimators': [100, 200],
+        'max_depth': [5, 10, 15],
+        'min_samples_split': [2, 5]
+    }
 
-        y_pred = model.predict(X_test)
+    base_model = RandomForestClassifier(class_weight='balanced', random_state=42)
+
+    # 2. Configurando a busca automática (focada em melhorar o F1-Score)
+    grid_search = GridSearchCV(
+        estimator=base_model,
+        param_grid=param_grid,
+        cv=3,
+        scoring='f1',
+        n_jobs=-1 # Usa todos os núcleos do seu processador
+    )
+
+    with mlflow.start_run(run_name="RandomForest_GridSearch"):
+        print("Iniciando a busca automática pelos melhores hiperparâmetros...")
+        grid_search.fit(X_train, y_train)
+
+        # 3. Extraindo o melhor modelo encontrado
+        best_model = grid_search.best_estimator_
+        y_pred = best_model.predict(X_test)
         score = f1_score(y_test, y_pred)
         
-        # Registrando uma métrica personalizada manualmente
-        mlflow.log_metric("f1_score_manual", score)
-        
-        print(f"Modelo treinado! F1-Score: {score:.4f}")
+        print(f"Melhor configuração encontrada: {grid_search.best_params_}")
+        print(f"F1-Score de Teste com esta configuração: {score:.4f}")
 
-        # Salvando o modelo
-        joblib.dump(model, os.path.join(model_path, "model.pkl"))
+        # Salvando o artefato final
+        joblib.dump(best_model, os.path.join(model_path, "model.pkl"))
 
 if __name__ == "__main__":
     run_train()
